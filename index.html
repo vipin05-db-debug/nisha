@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cute Smile Detector</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@500;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            /* Crucial for centering */
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #fff0f5 0%, #ffe6ea 100%);
+            font-family: 'Quicksand', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh;
+            overflow: hidden;
+            /* Prevent scrollbars from the rain */
+            position: relative;
+        }
+
+        /* --- NEW SLOW RAIN CSS --- */
+        .rain-drop {
+            position: absolute;
+            top: -50px;
+            z-index: 1;
+            /* Behind everything */
+            pointer-events: none;
+            animation: slowRain linear forwards;
+            opacity: 0.6;
+        }
+
+        @keyframes slowRain {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(110vh) rotate(20deg);
+            }
+        }
+
+        /* ------------------------- */
+
+        /* Background floating stickers */
+        .bg-sticker {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* MAIN CONTAINER - Desktop Horizontal */
+        #frame {
+            position: relative;
+            width: 850px;
+            height: 520px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(255, 105, 180, 0.2);
+            border: 10px solid white;
+            display: flex;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        /* CAMERA VIEW */
+        #cam-view {
+            width: 45%;
+            position: relative;
+            background: #000;
+            border-right: 5px solid white;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        /* SCANNING ANIMATION */
+        .scan-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: #ff69b4;
+            box-shadow: 0 0 25px #ff69b4, 0 0 10px white;
+            display: none;
+        }
+
+        .scanning-active {
+            display: block;
+            animation: scanMove 1.5s linear infinite;
+        }
+
+        @keyframes scanMove {
+            0% {
+                top: 0%;
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 100%;
+                opacity: 0.5;
+            }
+        }
+
+        /* TEXT AND CONTENT VIEW */
+        #text-view {
+            width: 55%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Vertical Center */
+            align-items: center;
+            /* Horizontal Center */
+            text-align: center;
+            background: radial-gradient(circle at center, #fff 0%, #fff5f8 100%);
+        }
+
+        h1 {
+            font-family: 'Pacifico', cursive;
+            color: #ff85a2;
+            font-size: 2.5rem;
+            margin: 0 0 15px 0;
+            text-shadow: 2px 2px 0px white;
+        }
+
+        #message-container {
+            width: 100%;
+            min-height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #message-text {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.15);
+            color: #ff6699;
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease;
+        }
+
+        .msg-header {
+            font-size: 1.6rem;
+            display: block;
+            margin-bottom: 8px;
+            color: #ff4d88;
+        }
+
+        #scan-btn {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%);
+            border: none;
+            padding: 15px 50px;
+            border-radius: 50px;
+            color: white;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 154, 158, 0.4);
+            transition: transform 0.2s;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        #scan-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #scan-btn:active {
+            transform: scale(0.95);
+        }
+
+        #scan-btn:disabled {
+            background: #ddd;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #hint-text {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-style: italic;
+            min-height: 20px;
+        }
+
+        /* MOBILE VIEW - Vertical Rectangle */
+        @media screen and (max-width: 768px) {
+            #frame {
+                width: 90vw;
+                height: 87vh;
+                flex-direction: column;
+                /* Stack top to bottom */
+                border-radius: 30px;
+            }
+
+            #cam-view {
+                width: 100%;
+                height: 40%;
+                /* Camera takes top part */
+                border-right: none;
+                border-bottom: 5px solid white;
+            }
+
+            #text-view {
+                width: 100%;
+                height: 60%;
+                /* Content takes bottom part */
+                padding: 20px;
+                justify-content: center;
+                /* Ensures vertical centering in mobile box */
+                align-items: center;
+                /* Ensures horizontal centering in mobile box */
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #message-container {
+                min-height: 120px;
+            }
+
+            #message-text {
+                font-size: 1rem;
+                padding: 15px;
+            }
+
+            #scan-btn {
+                padding: 12px 40px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            top: -10%;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        @keyframes fallDown {
+            0% {
+                top: -10%;
+                transform: rotate(0deg) scale(0.5);
+                opacity: 1;
+            }
+
+            100% {
+                top: 110%;
+                transform: rotate(720deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-sticker" style="top: 10%; left: 10%;">💖</div>
+    <div class="bg-sticker" style="bottom: 20%; right: 10%; animation-delay: 1s;">💋</div>
+    <div class="bg-sticker" style="top: 50%; left: 5%; animation-delay: 2s;">✨</div>
+
+    <div id="frame">
+        <div id="cam-view">
+            <video id="video" autoplay muted playsinline></video>
+            <div class="scan-bar" id="scanner"></div>
+        </div>
+
+        <div id="text-view">
+            <h1>Smile Detector 📸</h1>
+
+            <div id="message-container">
+                <div id="message-text"></div>
+            </div>
+
+            <button id="scan-btn" onclick="runScan()">Scan Face ✨</button>
+
+            <div id="hint-text"></div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const msgText = document.getElementById('message-text');
+        const btn = document.getElementById('scan-btn');
+        const scanner = document.getElementById('scanner');
+        const hintText = document.getElementById('hint-text');
+
+        // Setup Camera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+            .then(stream => video.srcObject = stream)
+            .catch(err => alert("Camera permission required! 📷"));
+
+        /* --- NEW SLOW RAIN SCRIPT --- */
+        function createRainDrop() {
+            const emojis = ['💗', '💕', '✨', '💋', '✨'];
+            const drop = document.createElement('div');
+            drop.className = 'rain-drop';
+            drop.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+            // Random horizontal position
+            drop.style.left = Math.random() * 100 + "vw";
+            // Random size
+            drop.style.fontSize = (Math.random() * 15 + 10) + "px";
+
+            // Random duration for "gravitational" feel (slow falling)
+            const duration = Math.random() * 5 + 7; // Between 7 and 12 seconds
+            drop.style.animationDuration = duration + "s";
+
+            document.body.appendChild(drop);
+
+            // Remove emoji after it falls
+            setTimeout(() => {
+                drop.remove();
+            }, duration * 1000);
+        }
+
+        // Create a new drop every 300ms
+        setInterval(createRainDrop, 300);
+        /* ----------------------------- */
+
+        let scanCount = 0;
+
+        const MESSAGES = [
+            `<span class="msg-header">OMG 😱</span> You are beautiful gorgeous! Your smile is so cute.
+
+        You look so beautiful... your smile is so, so, so cute,
+
+        Always smile.`,
+            `<span class="msg-header">Wait... 🤔</span> I've already told you you're so cute and beautiful. Why scan a second time?`,
+            `<span class="msg-header">Listen Closely 💌</span> Your smile is beautiful. Send a cute smile to the person that sent you this!
+        Do it now 📸`,
+            `<span class="msg-header">My cutie pie 🥰</span>`
+        ];
+
+        const HINTS = [
+            "I dare you NOT to click again. 🛑",
+            "Okay, stop. The next one is dangerous... 🚫",
+            "FINAL WARNING: Do not click! ⚠️",
+            "You never listen, do you? 🙄💖"
+        ];
+
+        function runScan() {
+            btn.disabled = true;
+            btn.innerText = "Scanning...";
+            hintText.innerText = "";
+            msgText.style.opacity = '0';
+            msgText.style.transform = 'translateY(10px)';
+
+            scanner.classList.add('scanning-active');
+
+            setTimeout(() => {
+                scanner.classList.remove('scanning-active');
+                btn.disabled = false;
+                btn.innerText = "Scan Again ✨";
+
+                let index = Math.min(scanCount, MESSAGES.length - 1);
+                msgText.innerHTML = MESSAGES[index];
+                hintText.innerText = HINTS[index];
+
+                if (scanCount >= 3) createPartyBlast();
+
+                msgText.style.opacity = '1';
+                msgText.style.transform = 'translateY(0)';
+                scanCount++;
+            }, 2500);
+        }
+
+        function createPartyBlast() {
+            const kisses = ['💋', '😘', '❤️', '💖'];
+            for (let i = 0; i < 60; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti';
+                el.innerText = kisses[Math.floor(Math.random() * kisses.length)];
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.animation = `fallDown ${2 + Math.random() * 3}s linear forwards`;
+                el.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 6000);
+            }
+        }
+    </script>
+</body>
+
+</html>
